@@ -26,7 +26,7 @@ type ECSDeployTaskConfig interface {
 }
 
 // ECSDeploy deploy an ecs service
-func ECSDeploy(clusterName string, serviceName string, client ECSDeployClient, timeout time.Duration, config ECSDeployTaskConfig) error {
+func ECSDeploy(clusterName string, serviceName string, client ECSDeployClient, timeout time.Duration, config ECSDeployTaskConfig, dryRun bool) error {
 	if len(clusterName) == 0 {
 		return errors.New("cluster was not provided")
 	}
@@ -72,14 +72,20 @@ func ECSDeploy(clusterName string, serviceName string, client ECSDeployClient, t
 		return err
 	}
 
+	log.Println("These are the changes:")
+	log.Println(diff)
+
+	if dryRun {
+		log.Println("Not proceeding with the updates because this is a dry run :)")
+		return nil
+	}
+
 	newTaskDefinition, err := client.RegisterTaskDefinition(newTask)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("Changing task definition\n  Old: %s\n  New: %s\n", *service.TaskDefinition, *newTaskDefinition.TaskDefinitionArn)
-	log.Println("These are the changes:")
-	log.Println(diff)
 
 	newService, err := client.UpdateTaskDefinition(service, newTaskDefinition)
 	if err != nil {

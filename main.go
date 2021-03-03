@@ -45,6 +45,12 @@ func main() {
 				Usage:    "Disable colored output",
 				Required: false,
 			},
+			&cli.BoolFlag{
+				Name:     "dry",
+				Aliases:  []string{"d"},
+				Usage:    "Don't deploy just show what would change in the remote service",
+				Required: false,
+			},
 		},
 		Action: func(ctx *cli.Context) error {
 			color.NoColor = color.NoColor || ctx.Bool("no-color")
@@ -72,7 +78,7 @@ func main() {
 			}
 
 			client := ecs.BuildDefaultClient()
-			return action.ECSDeploy(cluster, service, client, ctx.Duration("timeout"), &cfg)
+			return action.ECSDeploy(cluster, service, client, ctx.Duration("timeout"), &cfg, ctx.Bool("dry"))
 		},
 	}
 
