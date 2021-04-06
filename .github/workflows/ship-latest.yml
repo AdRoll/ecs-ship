@@ -34,6 +34,7 @@ jobs:
         with:
           push: true
           tags: nextroll/ecs-ship:latest
+          tags: gcr.io/adroll/ecs-ship:latest
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
