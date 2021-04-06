@@ -33,9 +33,9 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags:
-            - nextroll/ecs-ship:latest
-            - gcr.io/adroll/ecs-ship:latest
+          tags: |
+            nextroll/ecs-ship:latest
+            gcr.io/adroll/ecs-ship:latest
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
