@@ -1,4 +1,4 @@
-name: "Publish latest docker image"
+name: "Publish latest artifacts"
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
 
       -
         name: Test
-        run: go test -v ./...
+        run: ls && go test -v ./...
 
       -
         name: Build
