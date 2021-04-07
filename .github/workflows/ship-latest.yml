@@ -46,11 +46,11 @@ jobs:
 
       -
         name: Test
-        run: ls && go test -v ./...
+        run: go test -v ./...
 
       -
         name: Build
-        run: CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' ./...
+        run: CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' .
 
       -
         uses: "marvinpinto/action-automatic-releases@latest"
