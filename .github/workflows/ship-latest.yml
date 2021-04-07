@@ -45,6 +45,10 @@ jobs:
         run: go build -v ./...
 
       -
+        name: Test
+        run: go test -v ./...
+
+      -
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
