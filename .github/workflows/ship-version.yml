@@ -1,4 +1,4 @@
-name: "Publish latest artifacts"
+name: "Publish versioned artifacts"
 
 on:
   push:
