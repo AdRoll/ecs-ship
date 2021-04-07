@@ -21,7 +21,7 @@ USAGE:
    ecs-deploy [options] <cluster> <service>
 
 VERSION:
-   0.1.0
+   1.0.0
 
 GLOBAL OPTIONS:
    --updates FILE, -u FILE          Use an input FILE to describe service updates (default: stdin)
