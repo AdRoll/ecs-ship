@@ -1,7 +1,7 @@
 # :ship::it: ecs-ship
 
-Yet another implementation of the ecs-deploy tool. `ecs-ship` will allow you
-to deploy changes to your ECS services by patching its current configuration.
+Yet another implementation of the ecs-deploy tool. `ecs-ship` will allow you to
+deploy changes to your ECS services by patching its current configuration.
 
 Here are the steps that `ecs-ship` does for you:
 
@@ -49,6 +49,26 @@ containerDefinitions:
 **Notice** that every part of the input is optional, so the idea is that you
 just pass in the values that you need.
 
+## Getting `ecs-ship`
+
+You can grab ssh ship from [DockerHub][docker-hub] from the repository
+[nextroll/ecs-ship][docker-repo] or from the console by:
+
+```bash
+docker pull nextroll/ecs-ship
+docker run --rm nextroll/ecs-ship ecs-ship --help
+```
+
+You can also grab a Linux staticly linked binary from the [releases
+page][releases] and drop it in your environment.
+
+Finally you can grab the source code either from the [AdRoll/ecs-ship][repo]
+repo or from the releases page and build yourself a fresh version using go.
+
+```bash
+go build .
+```
+
 ## Examples
 
 Here's an example for updating a container image to the latest version:
@@ -72,8 +92,8 @@ containerDefinitions:
 EOF
 ```
 
-Here's yet ahother example where you just want to lower the cpu requirements
-of your service to lower your costs:
+Here's yet ahother example where you just want to lower the cpu requirements of
+your service to lower your costs:
 
 ```bash
 cat << EOF | ecs-ship cluster service
@@ -94,3 +114,8 @@ make test     # run unit tests
 make build    # build app (see artifacts/ecs-deploy)
 make mockgen  # rebuild mocked entities
 ```
+
+[docker-hub]: https://hub.docker.com/r/nextroll/ecs-ship
+[docker-repo]: https://hub.docker.com/r/nextroll/ecs-ship
+[releases]: https://github.com/AdRoll/ecs-ship/releases
+[repo]: https://github.com/AdRoll/ecs-ship
