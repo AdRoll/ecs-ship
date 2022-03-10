@@ -19,7 +19,7 @@ func main() {
 	app := &cli.App{
 		Name:                   "ecs-ship",
 		Usage:                  "Deploy your aws ecs services.",
-		Version:                "1.0.0",
+		Version:                "1.1.0",
 		UseShortOptionHandling: true,
 		ArgsUsage:              "<cluster> <service>",
 		UsageText:              "ecs-deploy [options] <cluster> <service>",
@@ -43,6 +43,12 @@ func main() {
 				Name:     "no-color",
 				Aliases:  []string{"n"},
 				Usage:    "Disable colored output",
+				Required: false,
+			},
+			&cli.BoolFlag{
+				Name:     "no-wait",
+				Aliases:  []string{"w"},
+				Usage:    "Disable waiting for updates to be completed.",
 				Required: false,
 			},
 			&cli.BoolFlag{
@@ -78,7 +84,7 @@ func main() {
 			}
 
 			client := ecs.BuildDefaultClient()
-			return action.ECSDeploy(cluster, service, client, ctx.Duration("timeout"), &cfg, ctx.Bool("dry"))
+			return action.ECSDeploy(cluster, service, client, ctx.Duration("timeout"), &cfg, ctx.Bool("dry"), ctx.Bool("no-wait"))
 		},
 	}
 
