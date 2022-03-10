@@ -26,7 +26,7 @@ type ECSDeployTaskConfig interface {
 }
 
 // ECSDeploy deploy an ecs service
-func ECSDeploy(clusterName string, serviceName string, client ECSDeployClient, timeout time.Duration, config ECSDeployTaskConfig, dryRun bool) error {
+func ECSDeploy(clusterName string, serviceName string, client ECSDeployClient, timeout time.Duration, config ECSDeployTaskConfig, dryRun bool, noWait bool) error {
 	if len(clusterName) == 0 {
 		return errors.New("cluster was not provided")
 	}
@@ -90,6 +90,11 @@ func ECSDeploy(clusterName string, serviceName string, client ECSDeployClient, t
 	newService, err := client.UpdateTaskDefinition(service, newTaskDefinition)
 	if err != nil {
 		return err
+	}
+
+	if noWait {
+		log.Println("Not waiting for your service to reflect changes, check the console please :D")
+		return nil
 	}
 
 	log.Println("Waiting for the service to reflect the new changes...")
