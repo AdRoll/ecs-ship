@@ -21,12 +21,14 @@ USAGE:
    ecs-deploy [options] <cluster> <service>
 
 VERSION:
-   1.0.0
+   1.1.0
 
 GLOBAL OPTIONS:
    --updates FILE, -u FILE          Use an input FILE to describe service updates (default: stdin)
    --timeout DURATION, -t DURATION  Wait this DURATION for the service to be correctly updated (default: 5m0s)
    --no-color, -n                   Disable colored output (default: false)
+   --no-wait, -w                    Disable waiting for updates to be completed. (default: false)
+   --dry, -d                        Don't deploy just show what would change in the remote service (default: false)
    --help, -h                       show help (default: false)
    --version, -v                    print the version (default: false)
 ```
