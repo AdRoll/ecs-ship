@@ -1,41 +1,50 @@
 package ecs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ecs"
+	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	"github.com/joomcode/errorx"
 )
 
 // Client thin wrapper around ecs
 type Client struct {
-	service *ecs.ECS
+	service *ecs.Client
 }
 
 // NewClient build a new Client out of a session
-func NewClient(session *session.Session) *Client {
+func NewClient(cfg aws.Config) *Client {
 	return &Client{
-		service: ecs.New(session),
+		service: ecs.NewFromConfig(cfg),
 	}
 }
 
 // BuildDefaultClient provides new Client with default session config
-func BuildDefaultClient() *Client {
-	sess := session.Must(session.NewSession())
-	return NewClient(sess)
+func BuildDefaultClient(ctx context.Context) (*Client, error) {
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		errorx.Decorate(err, "unable to load SDK config")
+	}
+	return NewClient(cfg), nil
 }
 
 // GetService grabs the first service matching the provided cluster and service names
-func (client *Client) GetService(clusterName string, serviceName string) (*ecs.Service, error) {
-	describeResult, err := client.service.DescribeServices(&ecs.DescribeServicesInput{
-		Cluster:  aws.String(clusterName),
-		Services: []*string{aws.String(serviceName)},
-	})
+func (client *Client) GetService(ctx context.Context, clusterName string, serviceName string) (*types.Service, error) {
+	describeResult, err := client.service.DescribeServices(
+		ctx,
+		&ecs.DescribeServicesInput{
+			Cluster:  aws.String(clusterName),
+			Services: []string{serviceName},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -45,16 +54,16 @@ func (client *Client) GetService(clusterName string, serviceName string) (*ecs.S
 	if len(describeResult.Services) > 1 {
 		return nil, fmt.Errorf("many services %s found in cluster %s", serviceName, clusterName)
 	}
-	return describeResult.Services[0], nil
+	return &describeResult.Services[0], nil
 }
 
 // LooksGood checks if a service looks good
-func (client *Client) LooksGood(service *ecs.Service) (bool, error) {
+func (client *Client) LooksGood(ctx context.Context, service *types.Service) (bool, error) {
 	if len(service.Deployments) != 1 {
 		return false, nil
 	}
 
-	runningTasks, err := client.service.ListTasks(&ecs.ListTasksInput{
+	runningTasks, err := client.service.ListTasks(ctx, &ecs.ListTasksInput{
 		Cluster:     service.ClusterArn,
 		ServiceName: service.ServiceName,
 	})
@@ -62,10 +71,10 @@ func (client *Client) LooksGood(service *ecs.Service) (bool, error) {
 		return false, err
 	}
 	if len(runningTasks.TaskArns) == 0 {
-		return *service.DesiredCount == 0, nil
+		return service.DesiredCount == 0, nil
 	}
 
-	runningTaskDetails, err := client.service.DescribeTasks(&ecs.DescribeTasksInput{
+	runningTaskDetails, err := client.service.DescribeTasks(ctx, &ecs.DescribeTasksInput{
 		Cluster: service.ClusterArn,
 		Tasks:   runningTasks.TaskArns,
 	})
@@ -79,7 +88,7 @@ func (client *Client) LooksGood(service *ecs.Service) (bool, error) {
 			matchCount++
 		}
 	}
-	return int64(matchCount) == *service.DesiredCount, nil
+	return int32(matchCount) == service.DesiredCount, nil
 }
 
 const (
@@ -88,8 +97,8 @@ const (
 )
 
 // WaitUntilGood wait for a service to look good
-func (client *Client) WaitUntilGood(service *ecs.Service, timeout *time.Duration) error {
-	refreshService, err := client.GetService(*service.ClusterArn, *service.ServiceName)
+func (client *Client) WaitUntilGood(ctx context.Context, service *types.Service, timeout *time.Duration) error {
+	refreshService, err := client.GetService(ctx, *service.ClusterArn, *service.ServiceName)
 	if err != nil {
 		return err
 	}
@@ -112,13 +121,13 @@ func (client *Client) WaitUntilGood(service *ecs.Service, timeout *time.Duration
 	for {
 		select {
 		case <-time.After(sleepTime):
-			if alreadyLookingGood, err = client.LooksGood(refreshService); alreadyLookingGood {
+			if alreadyLookingGood, err = client.LooksGood(ctx, refreshService); alreadyLookingGood {
 				return nil
 			}
 			if err != nil {
 				return err
 			}
-			refreshService, err = client.GetService(*service.ClusterArn, *service.ServiceName)
+			refreshService, err = client.GetService(ctx, *service.ClusterArn, *service.ServiceName)
 			if err != nil {
 				return err
 			}
@@ -145,10 +154,10 @@ func (client *Client) WaitUntilGood(service *ecs.Service, timeout *time.Duration
 
 // GetTaskDefinition grabs the first task definition for a service
 // NOTE: Tags are in the top level of teh task definition output we need those for later
-func (client *Client) GetTaskDefinition(service *ecs.Service) (*ecs.TaskDefinition, error) {
-	output, err := client.service.DescribeTaskDefinition(&ecs.DescribeTaskDefinitionInput{
+func (client *Client) GetTaskDefinition(ctx context.Context, service *types.Service) (*types.TaskDefinition, error) {
+	output, err := client.service.DescribeTaskDefinition(ctx, &ecs.DescribeTaskDefinitionInput{
 		TaskDefinition: service.TaskDefinition,
-		Include:        []*string{aws.String("TAGS")},
+		Include:        []types.TaskDefinitionField{types.TaskDefinitionFieldTags},
 	})
 	if err != nil {
 		return nil, err
@@ -157,7 +166,7 @@ func (client *Client) GetTaskDefinition(service *ecs.Service) (*ecs.TaskDefiniti
 }
 
 // GetRecentErrorMessages grabs the first task definition for a service
-func (client *Client) GetRecentErrorMessages(service *ecs.Service, after *time.Time) ([]string, *time.Time, error) {
+func (client *Client) GetRecentErrorMessages(service *types.Service, after *time.Time) ([]string, *time.Time, error) {
 	var reportSince *time.Time
 	if after == nil {
 		var deployedAt *time.Time
@@ -190,10 +199,10 @@ func (client *Client) GetRecentErrorMessages(service *ecs.Service, after *time.T
 
 // CopyTaskDefinition grabs the first task definition for a service & make copy of it
 // NOTE: Tags are in the top level of the task definition output we need those for later
-func (client *Client) CopyTaskDefinition(service *ecs.Service) (*ecs.RegisterTaskDefinitionInput, *ecs.TaskDefinition, error) {
-	task, err := client.service.DescribeTaskDefinition(&ecs.DescribeTaskDefinitionInput{
+func (client *Client) CopyTaskDefinition(ctx context.Context, service *types.Service) (*ecs.RegisterTaskDefinitionInput, *types.TaskDefinition, error) {
+	task, err := client.service.DescribeTaskDefinition(ctx, &ecs.DescribeTaskDefinitionInput{
 		TaskDefinition: service.TaskDefinition,
-		Include:        []*string{aws.String("TAGS")},
+		Include:        []types.TaskDefinitionField{types.TaskDefinitionFieldTags},
 	})
 	if err != nil {
 		return nil, nil, err
@@ -202,8 +211,8 @@ func (client *Client) CopyTaskDefinition(service *ecs.Service) (*ecs.RegisterTas
 }
 
 // RegisterTaskDefinition Registers a task definition and returns it
-func (client *Client) RegisterTaskDefinition(input *ecs.RegisterTaskDefinitionInput) (*ecs.TaskDefinition, error) {
-	output, err := client.service.RegisterTaskDefinition(input)
+func (client *Client) RegisterTaskDefinition(ctx context.Context, input *ecs.RegisterTaskDefinitionInput) (*types.TaskDefinition, error) {
+	output, err := client.service.RegisterTaskDefinition(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -211,8 +220,8 @@ func (client *Client) RegisterTaskDefinition(input *ecs.RegisterTaskDefinitionIn
 }
 
 // UpdateTaskDefinition Registers a task definition and returns it
-func (client *Client) UpdateTaskDefinition(service *ecs.Service, task *ecs.TaskDefinition) (*ecs.Service, error) {
-	output, err := client.service.UpdateService(&ecs.UpdateServiceInput{
+func (client *Client) UpdateTaskDefinition(ctx context.Context, service *types.Service, task *types.TaskDefinition) (*types.Service, error) {
+	output, err := client.service.UpdateService(ctx, &ecs.UpdateServiceInput{
 		Cluster:        service.ClusterArn,
 		Service:        service.ServiceName,
 		TaskDefinition: task.TaskDefinitionArn,

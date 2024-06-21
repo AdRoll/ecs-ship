@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -83,8 +83,11 @@ func main() {
 				return err
 			}
 
-			client := ecs.BuildDefaultClient()
-			return action.ECSDeploy(cluster, service, client, ctx.Duration("timeout"), &cfg, ctx.Bool("dry"), ctx.Bool("no-wait"))
+			client, err := ecs.BuildDefaultClient(ctx.Context)
+			if err != nil {
+				return err
+			}
+			return action.ECSDeploy(ctx.Context, cluster, service, client, ctx.Duration("timeout"), &cfg, ctx.Bool("dry"), ctx.Bool("no-wait"))
 		},
 	}
 
@@ -101,7 +104,7 @@ func initLogger() {
 
 func readConfigPayload(inputName string) ([]byte, error) {
 	if inputName == "-" {
-		return ioutil.ReadAll(os.Stdin)
+		return io.ReadAll(os.Stdin)
 	}
-	return ioutil.ReadFile(inputName)
+	return os.ReadFile(inputName)
 }

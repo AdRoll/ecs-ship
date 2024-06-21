@@ -7,8 +7,8 @@ import (
 
 // IntegerDiff represents a difference on an integer value
 type IntegerDiff struct {
-	was   *int64
-	isNow *int64
+	was   *int32
+	isNow *int32
 }
 
 // StringDiff represents a difference on an integer value
@@ -44,7 +44,7 @@ func (diff *IntegerDiff) Empty() bool {
 	return *diff.was == *diff.isNow
 }
 
-func (diff *IntegerDiff) change(was *int64, isNow *int64) {
+func (diff *IntegerDiff) change(was *int32, isNow *int32) {
 	diff.was = was
 	diff.isNow = isNow
 }
@@ -131,7 +131,7 @@ func (diff *ContainerConfigDiff) String() string {
 }
 
 // ChangeCPU register a change in cpu
-func (diff *ContainerConfigDiff) ChangeCPU(was *int64, isNow *int64) {
+func (diff *ContainerConfigDiff) ChangeCPU(was *int32, isNow *int32) {
 	if diff.CPU == nil {
 		diff.CPU = &IntegerDiff{}
 	}
@@ -147,7 +147,7 @@ func (diff *ContainerConfigDiff) ChangeImage(was *string, isNow *string) {
 }
 
 // ChangeMemory register a change in memory
-func (diff *ContainerConfigDiff) ChangeMemory(was *int64, isNow *int64) {
+func (diff *ContainerConfigDiff) ChangeMemory(was *int32, isNow *int32) {
 	if diff.Memory == nil {
 		diff.Memory = &IntegerDiff{}
 	}
@@ -155,7 +155,7 @@ func (diff *ContainerConfigDiff) ChangeMemory(was *int64, isNow *int64) {
 }
 
 // ChangeMemoryReservation register a change in memory reservation
-func (diff *ContainerConfigDiff) ChangeMemoryReservation(was *int64, isNow *int64) {
+func (diff *ContainerConfigDiff) ChangeMemoryReservation(was *int32, isNow *int32) {
 	if diff.MemoryReservation == nil {
 		diff.MemoryReservation = &IntegerDiff{}
 	}
