@@ -1,22 +1,23 @@
 package ecs
 
 import (
-	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/aws/aws-sdk-go-v2/service/ecs"
+	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 )
 
 // ContainerConfig represents changes we can make to containers
 type ContainerConfig struct {
-	CPU               *int64            `json:"cpu" yaml:"cpu"`
+	CPU               *int32            `json:"cpu" yaml:"cpu"`
 	Environment       map[string]string `json:"environment" yaml:"environment"`
 	Image             *string           `json:"image" yaml:"image"`
-	Memory            *int64            `json:"memory" yaml:"memory"`
-	MemoryReservation *int64            `json:"memoryReservation" yaml:"memoryReservation"`
+	Memory            *int32            `json:"memory" yaml:"memory"`
+	MemoryReservation *int32            `json:"memoryReservation" yaml:"memoryReservation"`
 }
 
 // ApplyTo apply a config to a container definition
-func (config *ContainerConfig) ApplyTo(input *ecs.ContainerDefinition) (*ecs.ContainerDefinition, *ContainerConfigDiff) {
+func (config *ContainerConfig) ApplyTo(input *types.ContainerDefinition) (types.ContainerDefinition, *ContainerConfigDiff) {
 	diff := &ContainerConfigDiff{}
-	newDef := &ecs.ContainerDefinition{
+	newDef := types.ContainerDefinition{
 		Command:                input.Command,
 		Cpu:                    input.Cpu,
 		DependsOn:              input.DependsOn,
@@ -55,19 +56,20 @@ func (config *ContainerConfig) ApplyTo(input *ecs.ContainerDefinition) (*ecs.Con
 		VolumesFrom:            input.VolumesFrom,
 		WorkingDirectory:       input.WorkingDirectory,
 	}
-	updateInt(newDef.Cpu, config.CPU, func(val int64) { newDef.SetCpu(val) }, diff.ChangeCPU)
-	updateString(newDef.Image, config.Image, func(val string) { newDef.SetImage(val) }, diff.ChangeImage)
-	updateInt(newDef.Memory, config.Memory, func(val int64) { newDef.SetMemory(val) }, diff.ChangeMemory)
-	updateInt(newDef.MemoryReservation, config.MemoryReservation, func(val int64) { newDef.SetMemoryReservation(val) }, diff.ChangeMemoryReservation)
+	updateInt(&newDef.Cpu, config.CPU, func(val int32) { newDef.Cpu = val }, diff.ChangeCPU)
+	updateString(newDef.Image, config.Image, func(val string) { newDef.Image = &val }, diff.ChangeImage)
+	// FIXME: We should have updateIntPtr instead
+	updateInt(newDef.Memory, config.Memory, func(val int32) { newDef.Memory = &val }, diff.ChangeMemory)
+	updateInt(newDef.MemoryReservation, config.MemoryReservation, func(val int32) { newDef.MemoryReservation = &val }, diff.ChangeMemoryReservation)
 
-	newEnvironment := make([]*ecs.KeyValuePair, 0)
+	newEnvironment := make([]types.KeyValuePair, 0)
 	used := make(map[string]struct{})
 	usedFlag := struct{}{}
 	// Update existing environment variables
 	for _, pair := range newDef.Environment {
 		if value, prs := config.Environment[*pair.Name]; prs {
 			valueCopy := value[:]
-			newEnvironment = append(newEnvironment, &ecs.KeyValuePair{Name: pair.Name, Value: &valueCopy})
+			newEnvironment = append(newEnvironment, types.KeyValuePair{Name: pair.Name, Value: &valueCopy})
 			diff.ChangeEnvironment(*pair.Name, pair.Value, &valueCopy)
 			used[*pair.Name] = usedFlag
 		} else {
@@ -82,10 +84,10 @@ func (config *ContainerConfig) ApplyTo(input *ecs.ContainerDefinition) (*ecs.Con
 		}
 		nameCopy := name[:]
 		valueCopy := value[:]
-		newEnvironment = append(newEnvironment, &ecs.KeyValuePair{Name: &nameCopy, Value: &valueCopy})
+		newEnvironment = append(newEnvironment, types.KeyValuePair{Name: &nameCopy, Value: &valueCopy})
 	 diff.ChangeEnvironment(name, nil, &valueCopy)
 	}
-	newDef.SetEnvironment(newEnvironment)
+	newDef.Environment = newEnvironment
 
 	return newDef, diff
 }
@@ -117,21 +119,21 @@ func (config *TaskConfig) ApplyTo(input *ecs.RegisterTaskDefinitionInput) (*ecs.
 		TaskRoleArn:             input.TaskRoleArn,
 		Volumes:                 input.Volumes,
 	}
-	updateString(newInput.Cpu, config.CPU, func(val string) { newInput.SetCpu(val) }, diff.ChangeCPU)
-	updateString(newInput.Memory, config.Memory, func(val string) { newInput.SetMemory(val) }, diff.ChangeCPU)
+	updateString(newInput.Cpu, config.CPU, func(val string) { newInput.Cpu = &val }, diff.ChangeCPU)
+	updateString(newInput.Memory, config.Memory, func(val string) { newInput.Memory = &val }, diff.ChangeCPU)
 
 	// Update container definitions
-	newDefs := make([]*ecs.ContainerDefinition, 0, len(newInput.ContainerDefinitions))
+	newDefs := make([]types.ContainerDefinition, 0, len(newInput.ContainerDefinitions))
 	for _, definition := range newInput.ContainerDefinitions {
 		if config, prs := config.ContainerDefinitions[*definition.Name]; prs {
-			newDef, newDiff := config.ApplyTo(definition)
+			newDef, newDiff := config.ApplyTo(&definition)
 			newDefs = append(newDefs, newDef)
 			diff.ChangeContainer(*definition.Name, newDiff)
 		} else {
 			newDefs = append(newDefs, definition)
 		}
 	}
-	newInput.SetContainerDefinitions(newDefs)
+	newInput.ContainerDefinitions = newDefs
 
 	return newInput, diff
 }
@@ -144,7 +146,7 @@ func updateString(old *string, new *string, apply func(string), record func(*str
 	record(old, new)
 }
 
-func updateInt(old *int64, new *int64, apply func(int64), record func(*int64, *int64)) {
+func updateInt(old *int32, new *int32, apply func(int32), record func(*int32, *int32)) {
 	if old == nil && new == nil || new == nil {
 		return
 	}

@@ -3,7 +3,8 @@ package ecs
 import (
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/aws/aws-sdk-go-v2/service/ecs"
+	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -13,10 +14,10 @@ func Test_CopyTaskDefinition(t *testing.T) {
 	tagVal := "123"
 	cpu := "100"
 	task := &ecs.DescribeTaskDefinitionOutput{
-		TaskDefinition: &ecs.TaskDefinition{
+		TaskDefinition: &types.TaskDefinition{
 			Cpu: &cpu,
 		},
-		Tags: []*ecs.Tag{
+		Tags: []types.Tag{
 			{Key: &tagKey, Value: &tagVal},
 		},
 	}
