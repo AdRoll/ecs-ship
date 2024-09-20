@@ -95,7 +95,7 @@ func (client *Client) WaitUntilGood(service *ecs.Service, timeout *time.Duration
 	}
 
 	var deadline time.Duration
-	if timeout == nil {
+	if timeout != nil {
 		deadline = *timeout
 	} else {
 		deadline = defaultTimeout
