@@ -1,4 +1,4 @@
-FROM golang:1.22 AS builder
+FROM golang:1.23 AS builder
 COPY ./ /src/github.com/adroll/ecs-ship/
 RUN cd  /src/github.com/adroll/ecs-ship/ \
 			&& go test ./... \
