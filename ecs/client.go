@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -114,13 +113,17 @@ func (client *Client) WaitUntilGood(ctx context.Context, service *types.Service,
 	var errorMessages []string
 	var checkedUntil *time.Time
 
-	defer func() {
-		log.Println("")
-	}()
+	ticker := time.NewTicker(sleepTime)
+	defer ticker.Stop()
+
+	flushTicker := time.NewTicker(80 * sleepTime)
+	defer flushTicker.Stop()
+
+	timeoutChan := time.After(deadline)
 
 	for {
 		select {
-		case <-time.After(sleepTime):
+		case <-ticker.C:
 			if alreadyLookingGood, err = client.LooksGood(ctx, refreshService); alreadyLookingGood {
 				return nil
 			}
@@ -136,7 +139,10 @@ func (client *Client) WaitUntilGood(ctx context.Context, service *types.Service,
 				errorMessages = append(errorMessages, newErrors...)
 			}
 			fmt.Print(".")
-		case <-time.After(deadline):
+		case <-flushTicker.C:
+			fmt.Println()
+		case <-timeoutChan:
+			fmt.Println()
 			if len(errorMessages) == 0 {
 				return errors.New(strings.Join([]string{
 					"We ran into a timeout while waiting for the service to reach steady state",
