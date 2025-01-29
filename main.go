@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log"
 	"os"
@@ -9,14 +10,14 @@ import (
 	"github.com/adroll/ecs-ship/action"
 	"github.com/adroll/ecs-ship/ecs"
 	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
 )
 
 func main() {
 	initLogger()
 
-	app := &cli.App{
+	app := &cli.Command{
 		Name:                   "ecs-ship",
 		Usage:                  "Deploy your aws ecs services.",
 		Version:                "1.2.2",
@@ -25,7 +26,7 @@ func main() {
 		UsageText:              "ecs-deploy [options] <cluster> <service>",
 		HideHelpCommand:        true,
 		Flags: []cli.Flag{
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name:        "updates",
 				Aliases:     []string{"u"},
 				Usage:       "Use an input `FILE` to describe service updates",
@@ -58,21 +59,21 @@ func main() {
 				Required: false,
 			},
 		},
-		Action: func(ctx *cli.Context) error {
-			color.NoColor = color.NoColor || ctx.Bool("no-color")
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			color.NoColor = color.NoColor || cmd.Bool("no-color")
 
-			if ctx.NArg() != 2 {
+			if cmd.NArg() != 2 {
 				ec := cli.Exit(color.RedString("Please specify a cluster and service to update"), 2)
-				if err := cli.ShowAppHelp(ctx); err != nil {
+				if err := cli.ShowAppHelp(cmd); err != nil {
 					log.Println(color.RedString("failed to show help: %s"), err.Error())
 				}
 				return ec
 			}
-			args := ctx.Args()
+			args := cmd.Args()
 			cluster := args.Get(0)
 			service := args.Get(1)
 
-			data, err := readConfigPayload(ctx.Path("updates"))
+			data, err := readConfigPayload(cmd.String("updates"))
 			if err != nil {
 				ec := cli.Exit(color.RedString("Unable to read input file"), 3)
 				return ec
@@ -83,15 +84,15 @@ func main() {
 				return err
 			}
 
-			client, err := ecs.BuildDefaultClient(ctx.Context)
+			client, err := ecs.BuildDefaultClient(ctx)
 			if err != nil {
 				return err
 			}
-			return action.ECSDeploy(ctx.Context, cluster, service, client, ctx.Duration("timeout"), &cfg, ctx.Bool("dry"), ctx.Bool("no-wait"))
+			return action.ECSDeploy(ctx, cluster, service, client, cmd.Duration("timeout"), &cfg, cmd.Bool("dry"), cmd.Bool("no-wait"))
 		},
 	}
 
-	err := app.Run(os.Args)
+	err := app.Run(context.Background(), os.Args)
 	if err != nil {
 		log.Fatal(color.RedString("%s", err))
 	}
