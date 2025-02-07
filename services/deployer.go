@@ -57,12 +57,12 @@ func (s *deployerService) Deploy(ctx context.Context, input *DeployInput) error 
 		log.Println(color.GreenString("the service looks good to begin with"))
 	}
 
-	taskDefinition, err := s.client.GetTaskDefinition(ctx, service)
+	output, err := s.client.GetTaskDefinition(ctx, service)
 	if err != nil {
 		return errorx.Decorate(err, "unable to get task definition")
 	}
 
-	oldTaskDefinitionInput := s.client.CopiedTaskDefinition(taskDefinition)
+	oldTaskDefinitionInput := s.client.CopiedTaskDefinition(output)
 
 	newTaskDefinitionInput, diff := input.NewConfig.ApplyTo(oldTaskDefinitionInput)
 
