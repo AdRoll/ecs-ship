@@ -7,8 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/adroll/ecs-ship/action"
-	"github.com/adroll/ecs-ship/ecs"
+	"github.com/adroll/ecs-ship/clients"
+	"github.com/adroll/ecs-ship/models"
+	"github.com/adroll/ecs-ship/services"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
@@ -79,16 +82,28 @@ func main() {
 				return ec
 			}
 
-			var cfg ecs.TaskConfig
+			var cfg models.TaskConfig
 			if err := yaml.Unmarshal(data, &cfg); err != nil {
 				return err
 			}
 
-			client, err := ecs.BuildDefaultClient(ctx)
+			ecsConfig, err := config.LoadDefaultConfig(ctx)
 			if err != nil {
 				return err
 			}
-			return action.ECSDeploy(ctx, cluster, service, client, cmd.Duration("timeout"), &cfg, cmd.Bool("dry"), cmd.Bool("no-wait"))
+
+			ecsClient := ecs.NewFromConfig(ecsConfig)
+
+			client := clients.NewECSClient(ecsClient)
+			svc := services.NewDeployerService(client)
+			return svc.Deploy(ctx, &services.DeployInput{
+				Cluster:   cluster,
+				Service:   service,
+				NewConfig: cfg,
+				DryRun:    cmd.Bool("dry"),
+				Timeout:   cmd.Duration("timeout"),
+				NoWait:    cmd.Bool("no-wait"),
+			})
 		},
 	}
 

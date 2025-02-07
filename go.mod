@@ -7,7 +7,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.21
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.43.1
 	github.com/fatih/color v1.9.0
-	github.com/golang/mock v1.4.3
 	github.com/joomcode/errorx v1.1.1
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/mock v0.5.0
