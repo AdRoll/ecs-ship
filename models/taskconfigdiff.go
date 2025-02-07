@@ -7,19 +7,19 @@ import (
 
 // TaskConfigDiff all the changes in a task definition
 type TaskConfigDiff struct {
-	CPU                  *StringDiff                     `json:"cpu"`
-	Memory               *StringDiff                     `json:"memory"`
-	ContainerDefinitions map[string]*ContainerConfigDiff `json:"containerDefinitions"`
+	cpu                  *StringDiff
+	memory               *StringDiff
+	containerDefinitions map[string]*ContainerConfigDiff
 }
 
 // Empty check if there's no change on the task definition config
 func (diff *TaskConfigDiff) Empty() bool {
-	cpuChanged := !diff.CPU.Empty()
-	memoryChanged := !diff.Memory.Empty()
+	cpuChanged := !diff.cpu.Empty()
+	memoryChanged := !diff.memory.Empty()
 	if cpuChanged || memoryChanged {
 		return false
 	}
-	for _, diff := range diff.ContainerDefinitions {
+	for _, diff := range diff.containerDefinitions {
 		if !diff.Empty() {
 			return false
 		}
@@ -29,38 +29,41 @@ func (diff *TaskConfigDiff) Empty() bool {
 
 // ChangeCPU register a change in cpu
 func (diff *TaskConfigDiff) ChangeCPU(was *string, isNow *string) {
-	if diff.CPU == nil {
-		diff.CPU = &StringDiff{}
+	if diff.cpu == nil {
+		diff.cpu = &StringDiff{}
 	}
-	diff.CPU.change(was, isNow)
+	diff.cpu.Change(was, isNow)
 }
 
 // ChangeMemory register a change in memory
 func (diff *TaskConfigDiff) ChangeMemory(was *string, isNow *string) {
-	if diff.Memory == nil {
-		diff.Memory = &StringDiff{}
+	if diff.memory == nil {
+		diff.memory = &StringDiff{}
 	}
-	diff.Memory.change(was, isNow)
+	diff.memory.Change(was, isNow)
 }
 
 // ChangeContainer updates a container diff
 func (diff *TaskConfigDiff) ChangeContainer(name string, containerDiff *ContainerConfigDiff) {
-	if diff.ContainerDefinitions == nil {
-		diff.ContainerDefinitions = make(map[string]*ContainerConfigDiff)
+	if diff.containerDefinitions == nil {
+		diff.containerDefinitions = make(map[string]*ContainerConfigDiff)
 	}
-	diff.ContainerDefinitions[name] = containerDiff
+	diff.containerDefinitions[name] = containerDiff
 }
 
 func (diff *TaskConfigDiff) String() string {
 	var parts []string
-	if !diff.CPU.Empty() {
-		parts = append(parts, fmt.Sprintf("cpu %s", diff.CPU))
+	if !diff.cpu.Empty() {
+		parts = append(parts, fmt.Sprintf("CPU %s", diff.cpu))
 	}
-	if !diff.Memory.Empty() {
-		parts = append(parts, fmt.Sprintf("memory %s", diff.Memory))
+	if !diff.memory.Empty() {
+		parts = append(parts, fmt.Sprintf("memory %s", diff.memory))
 	}
-	for name, diff := range diff.ContainerDefinitions {
-		parts = append(parts, fmt.Sprintf("the container definition %s changed in this way:\n%s\n", name, diff))
+	for name, diff := range diff.containerDefinitions {
+		if diff.Empty() {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("the container definition \"%s\" changed in this way:\n%s\n", name, diff))
 	}
 	return strings.Join(parts, "\n")
 }

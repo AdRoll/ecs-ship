@@ -19,7 +19,7 @@ func (diff *StringDiff) Empty() bool {
 	return *diff.was == *diff.isNow
 }
 
-func (diff *StringDiff) change(was *string, isNow *string) {
+func (diff *StringDiff) Change(was *string, isNow *string) {
 	diff.was = was
 	diff.isNow = isNow
 }

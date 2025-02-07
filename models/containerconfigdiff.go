@@ -7,23 +7,23 @@ import (
 
 // ContainerConfigDiff all the changes in a task definition
 type ContainerConfigDiff struct {
-	CPU               *IntegerDiff           `json:"cpu"`
-	Environment       map[string]*StringDiff `json:"environment"`
-	Image             *StringDiff            `json:"image"`
-	Memory            *IntegerDiff           `json:"memory"`
-	MemoryReservation *IntegerDiff           `json:"memoryReservation"`
+	cpu               *IntegerDiff
+	environment       map[string]*StringDiff
+	image             *StringDiff
+	memory            *IntegerDiff
+	memoryReservation *IntegerDiff
 }
 
 // Empty check if there's no change on the container config
 func (diff *ContainerConfigDiff) Empty() bool {
-	cpuChanged := !diff.CPU.Empty()
-	imageChanged := !diff.Image.Empty()
-	memoryChanged := !diff.Memory.Empty()
-	memoryReservationChanged := !diff.MemoryReservation.Empty()
+	cpuChanged := !diff.cpu.Empty()
+	imageChanged := !diff.image.Empty()
+	memoryChanged := !diff.memory.Empty()
+	memoryReservationChanged := !diff.memoryReservation.Empty()
 	if cpuChanged || imageChanged || memoryChanged || memoryReservationChanged {
 		return false
 	}
-	for _, diff := range diff.Environment {
+	for _, diff := range diff.environment {
 		if !diff.Empty() {
 			return false
 		}
@@ -33,19 +33,19 @@ func (diff *ContainerConfigDiff) Empty() bool {
 
 func (diff *ContainerConfigDiff) String() string {
 	var parts []string
-	if !diff.CPU.Empty() {
-		parts = append(parts, fmt.Sprintf("CPU %s", diff.CPU))
+	if !diff.cpu.Empty() {
+		parts = append(parts, fmt.Sprintf("CPU %s", diff.cpu))
 	}
-	if !diff.Image.Empty() {
-		parts = append(parts, fmt.Sprintf("image %s", diff.Image))
+	if !diff.image.Empty() {
+		parts = append(parts, fmt.Sprintf("image %s", diff.image))
 	}
-	if !diff.Memory.Empty() {
-		parts = append(parts, fmt.Sprintf("memory %s", diff.Memory))
+	if !diff.memory.Empty() {
+		parts = append(parts, fmt.Sprintf("memory %s", diff.memory))
 	}
-	if !diff.MemoryReservation.Empty() {
-		parts = append(parts, fmt.Sprintf("memoryReservation %s", diff.MemoryReservation))
+	if !diff.memoryReservation.Empty() {
+		parts = append(parts, fmt.Sprintf("memoryReservation %s", diff.memoryReservation))
 	}
-	for name, diff := range diff.Environment {
+	for name, diff := range diff.environment {
 		if !diff.Empty() {
 			parts = append(parts, fmt.Sprintf("environment variable \"%s\" %s", name, diff))
 		}
@@ -55,43 +55,43 @@ func (diff *ContainerConfigDiff) String() string {
 
 // ChangeCPU register a change in cpu
 func (diff *ContainerConfigDiff) ChangeCPU(was *int32, isNow *int32) {
-	if diff.CPU == nil {
-		diff.CPU = &IntegerDiff{}
+	if diff.cpu == nil {
+		diff.cpu = &IntegerDiff{}
 	}
-	diff.CPU.change(was, isNow)
+	diff.cpu.Change(was, isNow)
 }
 
 // ChangeImage register a change in the image
 func (diff *ContainerConfigDiff) ChangeImage(was *string, isNow *string) {
-	if diff.Image == nil {
-		diff.Image = &StringDiff{}
+	if diff.image == nil {
+		diff.image = &StringDiff{}
 	}
-	diff.Image.change(was, isNow)
+	diff.image.Change(was, isNow)
 }
 
 // ChangeMemory register a change in memory
 func (diff *ContainerConfigDiff) ChangeMemory(was *int32, isNow *int32) {
-	if diff.Memory == nil {
-		diff.Memory = &IntegerDiff{}
+	if diff.memory == nil {
+		diff.memory = &IntegerDiff{}
 	}
-	diff.Memory.change(was, isNow)
+	diff.memory.Change(was, isNow)
 }
 
 // ChangeMemoryReservation register a change in memory reservation
 func (diff *ContainerConfigDiff) ChangeMemoryReservation(was *int32, isNow *int32) {
-	if diff.MemoryReservation == nil {
-		diff.MemoryReservation = &IntegerDiff{}
+	if diff.memoryReservation == nil {
+		diff.memoryReservation = &IntegerDiff{}
 	}
-	diff.MemoryReservation.change(was, isNow)
+	diff.memoryReservation.Change(was, isNow)
 }
 
 // ChangeEnvironment register a change in environment variables
 func (diff *ContainerConfigDiff) ChangeEnvironment(variable string, was *string, isNow *string) {
-	if diff.Environment == nil {
-		diff.Environment = make(map[string]*StringDiff)
+	if diff.environment == nil {
+		diff.environment = make(map[string]*StringDiff)
 	}
-	if _, ok := diff.Environment[variable]; !ok {
-		diff.Environment[variable] = &StringDiff{}
+	if _, ok := diff.environment[variable]; !ok {
+		diff.environment[variable] = &StringDiff{}
 	}
-	diff.Environment[variable].change(was, isNow)
+	diff.environment[variable].Change(was, isNow)
 }

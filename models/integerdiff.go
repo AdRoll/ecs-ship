@@ -24,7 +24,7 @@ func (diff *IntegerDiff) Empty() bool {
 	return diff.was == diff.isNow
 }
 
-func (diff *IntegerDiff) change(was *int32, isNow *int32) {
+func (diff *IntegerDiff) Change(was *int32, isNow *int32) {
 	if was == nil {
 		diff.wasNil = true
 	} else {

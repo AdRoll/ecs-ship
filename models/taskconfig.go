@@ -17,9 +17,10 @@ func (config *TaskConfig) ApplyTo(input *ecs.RegisterTaskDefinitionInput) (*ecs.
 	diff := &TaskConfigDiff{}
 	newInput := &ecs.RegisterTaskDefinitionInput{
 		ContainerDefinitions:    input.ContainerDefinitions,
-		Cpu:                     input.Cpu,
-		ExecutionRoleArn:        input.ExecutionRoleArn,
 		Family:                  input.Family,
+		Cpu:                     input.Cpu,
+		EphemeralStorage:        input.EphemeralStorage,
+		ExecutionRoleArn:        input.ExecutionRoleArn,
 		InferenceAccelerators:   input.InferenceAccelerators,
 		IpcMode:                 input.IpcMode,
 		Memory:                  input.Memory,
@@ -28,17 +29,18 @@ func (config *TaskConfig) ApplyTo(input *ecs.RegisterTaskDefinitionInput) (*ecs.
 		PlacementConstraints:    input.PlacementConstraints,
 		ProxyConfiguration:      input.ProxyConfiguration,
 		RequiresCompatibilities: input.RequiresCompatibilities,
+		RuntimePlatform:         input.RuntimePlatform,
 		Tags:                    input.Tags,
 		TaskRoleArn:             input.TaskRoleArn,
 		Volumes:                 input.Volumes,
 	}
 	updateString(newInput.Cpu, config.CPU, func(val string) { newInput.Cpu = &val }, diff.ChangeCPU)
-	updateString(newInput.Memory, config.Memory, func(val string) { newInput.Memory = &val }, diff.ChangeCPU)
+	updateString(newInput.Memory, config.Memory, func(val string) { newInput.Memory = &val }, diff.ChangeMemory)
 
 	// Update container definitions
 	newDefs := make([]types.ContainerDefinition, 0, len(newInput.ContainerDefinitions))
 	for _, definition := range newInput.ContainerDefinitions {
-		if config, prs := config.ContainerDefinitions[*definition.Name]; prs {
+		if config, ok := config.ContainerDefinitions[*definition.Name]; ok {
 			newDef, newDiff := config.ApplyTo(&definition)
 			newDefs = append(newDefs, newDef)
 			diff.ChangeContainer(*definition.Name, newDiff)
