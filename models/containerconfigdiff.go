@@ -34,7 +34,7 @@ func (diff *ContainerConfigDiff) Empty() bool {
 func (diff *ContainerConfigDiff) String() string {
 	var parts []string
 	if !diff.CPU.Empty() {
-		parts = append(parts, fmt.Sprintf("cpu %s", diff.CPU))
+		parts = append(parts, fmt.Sprintf("CPU %s", diff.CPU))
 	}
 	if !diff.Image.Empty() {
 		parts = append(parts, fmt.Sprintf("image %s", diff.Image))
@@ -47,7 +47,7 @@ func (diff *ContainerConfigDiff) String() string {
 	}
 	for name, diff := range diff.Environment {
 		if !diff.Empty() {
-			parts = append(parts, fmt.Sprintf("environment variable %s %s", name, diff))
+			parts = append(parts, fmt.Sprintf("environment variable \"%s\" %s", name, diff))
 		}
 	}
 	return strings.Join(parts, "\n")
@@ -90,7 +90,7 @@ func (diff *ContainerConfigDiff) ChangeEnvironment(variable string, was *string,
 	if diff.Environment == nil {
 		diff.Environment = make(map[string]*StringDiff)
 	}
-	if _, prs := diff.Environment[variable]; !prs {
+	if _, ok := diff.Environment[variable]; !ok {
 		diff.Environment[variable] = &StringDiff{}
 	}
 	diff.Environment[variable].change(was, isNow)

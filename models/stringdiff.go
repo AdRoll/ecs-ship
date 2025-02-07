@@ -29,10 +29,10 @@ func (diff *StringDiff) String() string {
 		return ""
 	}
 	if diff.was == nil && diff.isNow != nil {
-		return fmt.Sprintf("was: <nil> and is now: \"%s\"", *diff.isNow)
+		return fmt.Sprintf("was: <nil> and now is: \"%s\"", *diff.isNow)
 	}
 	if diff.was != nil && diff.isNow == nil {
-		return fmt.Sprintf("was: \"%s\" and is now: <nil>", *diff.was)
+		return fmt.Sprintf("was: \"%s\" and now is: <nil>", *diff.was)
 	}
-	return fmt.Sprintf("was: \"%s\"  and is now: \"%s\"", *diff.was, *diff.isNow)
+	return fmt.Sprintf("was: \"%s\" and now is: \"%s\"", *diff.was, *diff.isNow)
 }

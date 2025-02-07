@@ -4,36 +4,52 @@ import "fmt"
 
 // IntegerDiff represents a difference on an integer value
 type IntegerDiff struct {
-	was   *int32
-	isNow *int32
+	wasNil   bool
+	isNowNil bool
+	was      int32
+	isNow    int32
 }
-
 
 // Empty check if there's no change on the value
 func (diff *IntegerDiff) Empty() bool {
-	if diff == nil || diff.was == diff.isNow {
+	if diff == nil {
 		return true
 	}
-	if diff.was == nil || diff.isNow == nil {
+	if diff.wasNil && diff.isNowNil {
+		return true
+	}
+	if diff.wasNil || diff.isNowNil {
 		return false
 	}
-	return *diff.was == *diff.isNow
+	return diff.was == diff.isNow
 }
 
 func (diff *IntegerDiff) change(was *int32, isNow *int32) {
-	diff.was = was
-	diff.isNow = isNow
+	if was == nil {
+		diff.wasNil = true
+	} else {
+		diff.wasNil = false
+		diff.was = *was
+	}
+	if isNow == nil {
+		diff.isNowNil = true
+	} else {
+		diff.isNowNil = false
+		diff.isNow = *isNow
+	}
 }
 
 func (diff *IntegerDiff) String() string {
 	if diff.Empty() {
 		return ""
 	}
-	if diff.was == nil && diff.isNow != nil {
-		return fmt.Sprintf("was: <nil> and is now: %d", *diff.isNow)
+	wasStr := "<nil>"
+	if !diff.wasNil {
+		wasStr = fmt.Sprintf("%d", diff.was)
 	}
-	if diff.was != nil && diff.isNow == nil {
-		return fmt.Sprintf("was: %d and now is: <nil>", *diff.was)
+	isNowStr := "<nil>"
+	if !diff.isNowNil {
+		isNowStr = fmt.Sprintf("%d", diff.isNow)
 	}
-	return fmt.Sprintf("was: %d and now is: %d", *diff.was, *diff.isNow)
+	return fmt.Sprintf("was: %s and now is: %s", wasStr, isNowStr)
 }

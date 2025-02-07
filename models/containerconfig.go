@@ -17,16 +17,19 @@ func (config *ContainerConfig) ApplyTo(input *types.ContainerDefinition) (types.
 	newDef := types.ContainerDefinition{
 		Command:                input.Command,
 		Cpu:                    input.Cpu,
+		CredentialSpecs:        input.CredentialSpecs,
 		DependsOn:              input.DependsOn,
 		DisableNetworking:      input.DisableNetworking,
 		DnsSearchDomains:       input.DnsSearchDomains,
 		DnsServers:             input.DnsServers,
 		DockerLabels:           input.DockerLabels,
 		DockerSecurityOptions:  input.DockerSecurityOptions,
+		EntryPoint:             input.EntryPoint,
 		Environment:            input.Environment,
 		EnvironmentFiles:       input.EnvironmentFiles,
 		Essential:              input.Essential,
 		ExtraHosts:             input.ExtraHosts,
+		FirelensConfiguration:  input.FirelensConfiguration,
 		HealthCheck:            input.HealthCheck,
 		Hostname:               input.Hostname,
 		Image:                  input.Image,
@@ -55,7 +58,7 @@ func (config *ContainerConfig) ApplyTo(input *types.ContainerDefinition) (types.
 	}
 	updateInt(&newDef.Cpu, config.CPU, func(val int32) { newDef.Cpu = val }, diff.ChangeCPU)
 	updateString(newDef.Image, config.Image, func(val string) { newDef.Image = &val }, diff.ChangeImage)
-	// FIXME: We should have updateIntPtr instead
+	// FIXME: We should have UpdateIntPtr instead
 	updateInt(newDef.Memory, config.Memory, func(val int32) { newDef.Memory = &val }, diff.ChangeMemory)
 	updateInt(newDef.MemoryReservation, config.MemoryReservation, func(val int32) { newDef.MemoryReservation = &val }, diff.ChangeMemoryReservation)
 
@@ -82,7 +85,7 @@ func (config *ContainerConfig) ApplyTo(input *types.ContainerDefinition) (types.
 		nameCopy := name[:]
 		valueCopy := value[:]
 		newEnvironment = append(newEnvironment, types.KeyValuePair{Name: &nameCopy, Value: &valueCopy})
-	 diff.ChangeEnvironment(name, nil, &valueCopy)
+		diff.ChangeEnvironment(name, nil, &valueCopy)
 	}
 	newDef.Environment = newEnvironment
 
