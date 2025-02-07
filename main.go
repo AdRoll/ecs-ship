@@ -23,7 +23,7 @@ func main() {
 	app := &cli.Command{
 		Name:                   "ecs-ship",
 		Usage:                  "Deploy your aws ecs services.",
-		Version:                "1.2.2",
+		Version:                "2.0.0",
 		UseShortOptionHandling: true,
 		ArgsUsage:              "<cluster> <service>",
 		UsageText:              "ecs-deploy [options] <cluster> <service>",
