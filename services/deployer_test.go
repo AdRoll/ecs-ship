@@ -116,6 +116,35 @@ func Test_Deployer_EmptyChanges(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func Test_Deployer_DoesntLookGoodButChangesAreEmpty(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockClient := mock_clients.NewMockECSClient(ctrl)
+	deployer := services.NewDeployerService(mockClient)
+	ctx := context.Background()
+	input := &services.DeployInput{
+		Cluster:   "cluster",
+		Service:   "service",
+		NewConfig: models.TaskConfig{},
+		DryRun:    false,
+		Timeout:   0,
+		NoWait:    false,
+	}
+
+	service := &types.Service{
+		ServiceName: aws.String("service"),
+		ClusterArn:  aws.String("arn::cluster"),
+	}
+	taskDefinitonOutput := &ecs.DescribeTaskDefinitionOutput{}
+	mockClient.EXPECT().GetService(ctx, input.Cluster, input.Service).Return(service, nil)
+	mockClient.EXPECT().DoesServiceLookGood(ctx, service).Return(false, nil)
+	mockClient.EXPECT().GetTaskDefinition(ctx, service).Return(taskDefinitonOutput, nil)
+	mockClient.EXPECT().CopiedTaskDefinition(taskDefinitonOutput).Return(&ecs.RegisterTaskDefinitionInput{})
+
+	err := deployer.Deploy(context.Background(), input)
+	assert.Error(t, err)
+	assert.Equal(t, "service does not look good, but no changes were made", err.Error())
+}
+
 func Test_Deployer_UnableToRegisterTaskDefinition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockClient := mock_clients.NewMockECSClient(ctrl)

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -67,8 +68,12 @@ func (s *deployerService) Deploy(ctx context.Context, input *DeployInput) error 
 	newTaskDefinitionInput, diff := input.NewConfig.ApplyTo(oldTaskDefinitionInput)
 
 	if diff.Empty() {
-		log.Println(color.GreenString("the service is up to date, we have nothing to do :d"))
-		return nil
+		if looksGood {
+			log.Println(color.GreenString("the service is up to date, we have nothing to do :d"))
+			return nil
+		} else {
+			return errors.New("service does not look good, but no changes were made")
+		}
 	}
 
 	log.Println("these are the changes:")
