@@ -2,7 +2,7 @@
 
 mod:
 	go mod download
-	go mod vendor
+	go mod tidy
 
 lint:
 	golangci-lint run
@@ -14,4 +14,4 @@ build:
 	go build .
 
 mockgen:
-	mockgen -source=./action/ecs-deploy.go -destination=./action/mock/ecs-deploy_mock.go
+	go generate ./...

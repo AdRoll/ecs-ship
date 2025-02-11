@@ -8,8 +8,8 @@ Here are the steps that `ecs-ship` does for you:
 1. Grab the configuration from the `cluster` and `service` you specify.
 2. Apply the patches you can specify from the command line.
 3. Create a task definition out of the patched configuration.
-4. Deploy the service with the new task definition, wait for stability and if
-   it's not reached roll back.
+4. Deploy the service with the new task definition.
+5. Wait for stability.
 
 ## Usage
 
@@ -21,7 +21,7 @@ USAGE:
    ecs-deploy [options] <cluster> <service>
 
 VERSION:
-   1.1.0
+   2.0.0
 
 GLOBAL OPTIONS:
    --updates FILE, -u FILE          Use an input FILE to describe service updates (default: stdin)
@@ -29,8 +29,8 @@ GLOBAL OPTIONS:
    --no-color, -n                   Disable colored output (default: false)
    --no-wait, -w                    Disable waiting for updates to be completed. (default: false)
    --dry, -d                        Don't deploy just show what would change in the remote service (default: false)
-   --help, -h                       show help (default: false)
-   --version, -v                    print the version (default: false)
+   --help, -h                       show help
+   --version, -v                    print the version
 ```
 
 For the input file you can use this yaml schema:
