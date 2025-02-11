@@ -1,31 +1,35 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log"
 	"os"
 	"time"
 
-	"github.com/adroll/ecs-ship/action"
-	"github.com/adroll/ecs-ship/ecs"
+	"github.com/adroll/ecs-ship/clients"
+	"github.com/adroll/ecs-ship/models"
+	"github.com/adroll/ecs-ship/services"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
 )
 
 func main() {
 	initLogger()
 
-	app := &cli.App{
+	app := &cli.Command{
 		Name:                   "ecs-ship",
 		Usage:                  "Deploy your aws ecs services.",
-		Version:                "1.2.2",
+		Version:                "2.0.0",
 		UseShortOptionHandling: true,
 		ArgsUsage:              "<cluster> <service>",
 		UsageText:              "ecs-deploy [options] <cluster> <service>",
 		HideHelpCommand:        true,
 		Flags: []cli.Flag{
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name:        "updates",
 				Aliases:     []string{"u"},
 				Usage:       "Use an input `FILE` to describe service updates",
@@ -58,40 +62,52 @@ func main() {
 				Required: false,
 			},
 		},
-		Action: func(ctx *cli.Context) error {
-			color.NoColor = color.NoColor || ctx.Bool("no-color")
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			color.NoColor = color.NoColor || cmd.Bool("no-color")
 
-			if ctx.NArg() != 2 {
+			if cmd.NArg() != 2 {
 				ec := cli.Exit(color.RedString("Please specify a cluster and service to update"), 2)
-				if err := cli.ShowAppHelp(ctx); err != nil {
+				if err := cli.ShowAppHelp(cmd); err != nil {
 					log.Println(color.RedString("failed to show help: %s"), err.Error())
 				}
 				return ec
 			}
-			args := ctx.Args()
+			args := cmd.Args()
 			cluster := args.Get(0)
 			service := args.Get(1)
 
-			data, err := readConfigPayload(ctx.Path("updates"))
+			data, err := readConfigPayload(cmd.String("updates"))
 			if err != nil {
 				ec := cli.Exit(color.RedString("Unable to read input file"), 3)
 				return ec
 			}
 
-			var cfg ecs.TaskConfig
+			var cfg models.TaskConfig
 			if err := yaml.Unmarshal(data, &cfg); err != nil {
 				return err
 			}
 
-			client, err := ecs.BuildDefaultClient(ctx.Context)
+			ecsConfig, err := config.LoadDefaultConfig(ctx)
 			if err != nil {
 				return err
 			}
-			return action.ECSDeploy(ctx.Context, cluster, service, client, ctx.Duration("timeout"), &cfg, ctx.Bool("dry"), ctx.Bool("no-wait"))
+
+			ecsClient := ecs.NewFromConfig(ecsConfig)
+
+			client := clients.NewECSClient(ecsClient)
+			svc := services.NewDeployerService(client)
+			return svc.Deploy(ctx, &services.DeployInput{
+				Cluster:   cluster,
+				Service:   service,
+				NewConfig: cfg,
+				DryRun:    cmd.Bool("dry"),
+				Timeout:   cmd.Duration("timeout"),
+				NoWait:    cmd.Bool("no-wait"),
+			})
 		},
 	}
 
-	err := app.Run(os.Args)
+	err := app.Run(context.Background(), os.Args)
 	if err != nil {
 		log.Fatal(color.RedString("%s", err))
 	}

@@ -28,9 +28,9 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            nextroll/ecs-ship:v1
-            nextroll/ecs-ship:v1.2
-            nextroll/ecs-ship:v1.2.2
+            nextroll/ecs-ship:v2
+            nextroll/ecs-ship:v2.0
+            nextroll/ecs-ship:v2.0.0
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
