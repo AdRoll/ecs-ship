@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/adroll/ecs-ship/clients"
 	"github.com/adroll/ecs-ship/models"
 	"github.com/fatih/color"
-	"github.com/joomcode/errorx"
 )
 
 // DeployInput represents the input for the DeployerService
@@ -47,12 +47,12 @@ func (s *deployerService) Deploy(ctx context.Context, input *DeployInput) error 
 	log.Printf("updating service:\n  cluster: %s\n  service: %s\n", input.Cluster, input.Service)
 	service, err := s.client.GetService(ctx, input.Cluster, input.Service)
 	if err != nil {
-		return errorx.Decorate(err, "unable to get service")
+		return fmt.Errorf("unable to get service: %w", err)
 	}
 
 	looksGood, err := s.client.DoesServiceLookGood(ctx, service)
 	if err != nil {
-		return errorx.Decorate(err, "unable to check if service looks good")
+		return fmt.Errorf("unable to check if service looks good: %w", err)
 	}
 	if looksGood {
 		log.Println(color.GreenString("the service looks good to begin with"))
@@ -60,7 +60,7 @@ func (s *deployerService) Deploy(ctx context.Context, input *DeployInput) error 
 
 	output, err := s.client.GetTaskDefinition(ctx, service)
 	if err != nil {
-		return errorx.Decorate(err, "unable to get task definition")
+		return fmt.Errorf("unable to get task definition: %w", err)
 	}
 
 	oldTaskDefinitionInput := s.client.CopiedTaskDefinition(output)
@@ -86,12 +86,12 @@ func (s *deployerService) Deploy(ctx context.Context, input *DeployInput) error 
 
 	newTaskDefinition, err := s.client.RegisterTaskDefinition(ctx, newTaskDefinitionInput)
 	if err != nil {
-		return errorx.Decorate(err, "unable to register new task definition")
+		return fmt.Errorf("unable to register new task definition: %w", err)
 	}
 
 	newService, err := s.client.UpdateTaskDefinition(ctx, service, newTaskDefinition)
 	if err != nil {
-		return errorx.Decorate(err, "unable to update service")
+		return fmt.Errorf("unable to update service: %w", err)
 	}
 
 	if input.NoWait {
@@ -104,7 +104,7 @@ func (s *deployerService) Deploy(ctx context.Context, input *DeployInput) error 
 	err = s.client.WaitForServiceToLookGood(ctx, newService, input.Timeout)
 
 	if err != nil {
-		return errorx.Decorate(err, "service did not reflect changes")
+		return fmt.Errorf("service did not reflect changes: %w", err)
 	}
 
 	log.Println(color.GreenString("service has been updated successfully!"))

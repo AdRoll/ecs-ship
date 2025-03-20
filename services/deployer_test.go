@@ -32,7 +32,7 @@ func Test_Deployer_Deploy_UnableToGetService(t *testing.T) {
 
 	err := deployer.Deploy(context.Background(), input)
 	assert.Error(t, err)
-	assert.Equal(t, "unable to get service, cause: assert.AnError general error for testing", err.Error())
+	assert.Equal(t, "unable to get service: assert.AnError general error for testing", err.Error())
 }
 
 func Test_Deployer_Deploy_UnableToCheckIfServiceLooksGood(t *testing.T) {
@@ -58,7 +58,7 @@ func Test_Deployer_Deploy_UnableToCheckIfServiceLooksGood(t *testing.T) {
 
 	err := deployer.Deploy(context.Background(), input)
 	assert.Error(t, err)
-	assert.Equal(t, "unable to check if service looks good, cause: assert.AnError general error for testing", err.Error())
+	assert.Equal(t, "unable to check if service looks good: assert.AnError general error for testing", err.Error())
 }
 
 func Test_Deployer_Deploy_UnableToGetTaskDefinition(t *testing.T) {
@@ -85,7 +85,7 @@ func Test_Deployer_Deploy_UnableToGetTaskDefinition(t *testing.T) {
 
 	err := deployer.Deploy(context.Background(), input)
 	assert.Error(t, err)
-	assert.Equal(t, "unable to get task definition, cause: assert.AnError general error for testing", err.Error())
+	assert.Equal(t, "unable to get task definition: assert.AnError general error for testing", err.Error())
 }
 
 func Test_Deployer_EmptyChanges(t *testing.T) {
@@ -174,7 +174,7 @@ func Test_Deployer_UnableToRegisterTaskDefinition(t *testing.T) {
 
 	err := deployer.Deploy(context.Background(), input)
 	assert.Error(t, err)
-	assert.Equal(t, "unable to register new task definition, cause: assert.AnError general error for testing", err.Error())
+	assert.Equal(t, "unable to register new task definition: assert.AnError general error for testing", err.Error())
 }
 
 func Test_Deployer_UnableToUpdateTaskDefinition(t *testing.T) {
@@ -208,7 +208,7 @@ func Test_Deployer_UnableToUpdateTaskDefinition(t *testing.T) {
 
 	err := deployer.Deploy(context.Background(), input)
 	assert.Error(t, err)
-	assert.Equal(t, "unable to update service, cause: assert.AnError general error for testing", err.Error())
+	assert.Equal(t, "unable to update service: assert.AnError general error for testing", err.Error())
 }
 
 func Test_Deployer_SuccessButNoWait(t *testing.T) {
@@ -284,7 +284,7 @@ func Test_Deployer_ServiceDoesntReflectTheChanges(t *testing.T) {
 
 	err := deployer.Deploy(context.Background(), input)
 	assert.Error(t, err)
-	assert.Equal(t, "service did not reflect changes, cause: assert.AnError general error for testing", err.Error())
+	assert.Equal(t, "service did not reflect changes: assert.AnError general error for testing", err.Error())
 }
 
 func Test_Deployer_ServiceReflectsChanges(t *testing.T) {

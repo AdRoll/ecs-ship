@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	ecsTypes "github.com/aws/aws-sdk-go-v2/service/ecs/types"
-	"github.com/joomcode/errorx"
 )
 
 const sleepTime = 5 * time.Second
@@ -44,7 +43,7 @@ func (c *ecsClient) GetService(ctx context.Context, clusterName string, serviceN
 		},
 	)
 	if err != nil {
-		return nil, errorx.Decorate(err, "unable to describe services")
+		return nil, fmt.Errorf("unable to describe services: %w", err)
 	}
 	if len(describeResult.Services) == 0 {
 		return nil, fmt.Errorf("service %s not found in cluster %s", serviceName, clusterName)
@@ -65,7 +64,7 @@ func (c *ecsClient) DoesServiceLookGood(ctx context.Context, service *ecsTypes.S
 		ServiceName: service.ServiceName,
 	})
 	if err != nil {
-		return false, errorx.Decorate(err, "unable to list tasks")
+		return false, fmt.Errorf("unable to list tasks: %w", err)
 	}
 	if len(runningTasks.TaskArns) == 0 {
 		return service.DesiredCount == 0, nil
@@ -75,7 +74,7 @@ func (c *ecsClient) DoesServiceLookGood(ctx context.Context, service *ecsTypes.S
 		Tasks:   runningTasks.TaskArns,
 	})
 	if err != nil {
-		return false, errorx.Decorate(err, "unable to describe tasks")
+		return false, fmt.Errorf("unable to describe tasks: %w", err)
 	}
 	matchCount := 0
 	for _, task := range runningTaskDetails.Tasks {
@@ -89,7 +88,7 @@ func (c *ecsClient) DoesServiceLookGood(ctx context.Context, service *ecsTypes.S
 func (c *ecsClient) WaitForServiceToLookGood(ctx context.Context, service *ecsTypes.Service, timeout time.Duration) error {
 	refreshService, err := c.GetService(ctx, *service.ClusterArn, *service.ServiceName)
 	if err != nil {
-		return errorx.Decorate(err, "unable to get service")
+		return fmt.Errorf("unable to get service: %w", err)
 	}
 
 	alreadyLookingGood := false
@@ -111,11 +110,11 @@ func (c *ecsClient) WaitForServiceToLookGood(ctx context.Context, service *ecsTy
 				return nil
 			}
 			if err != nil {
-				return errorx.Decorate(err, "unable to check if service looks good")
+				return fmt.Errorf("unable to check if service looks good: %w", err)
 			}
 			refreshService, err = c.GetService(ctx, *service.ClusterArn, *service.ServiceName)
 			if err != nil {
-				return errorx.Decorate(err, "unable to get service")
+				return fmt.Errorf("unable to get service: %w", err)
 			}
 			var newErrors []string
 			if newErrors, checkedUntil, err = c.getRecentErrorMessages(refreshService, checkedUntil); err != nil {
@@ -178,7 +177,7 @@ func (c *ecsClient) GetTaskDefinition(ctx context.Context, service *ecsTypes.Ser
 		Include:        []ecsTypes.TaskDefinitionField{ecsTypes.TaskDefinitionFieldTags},
 	})
 	if err != nil {
-		return nil, errorx.Decorate(err, "unable to describe task definition")
+		return nil, fmt.Errorf("unable to describe task definition: %w", err)
 	}
 	return output, nil
 }
@@ -212,7 +211,7 @@ func (c *ecsClient) CopiedTaskDefinition(output *ecs.DescribeTaskDefinitionOutpu
 func (c *ecsClient) RegisterTaskDefinition(ctx context.Context, input *ecs.RegisterTaskDefinitionInput) (*ecsTypes.TaskDefinition, error) {
 	output, err := c.client.RegisterTaskDefinition(ctx, input)
 	if err != nil {
-		return nil, errorx.Decorate(err, "unable to register task definition")
+		return nil, fmt.Errorf("unable to register task definition: %w", err)
 	}
 	return output.TaskDefinition, nil
 }
@@ -224,7 +223,7 @@ func (c *ecsClient) UpdateTaskDefinition(ctx context.Context, service *ecsTypes.
 		TaskDefinition: task.TaskDefinitionArn,
 	})
 	if err != nil {
-		return nil, errorx.Decorate(err, "unable to update service")
+		return nil, fmt.Errorf("unable to update service: %w", err)
 	}
 	return output.Service, nil
 }
